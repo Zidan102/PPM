@@ -1,42 +1,84 @@
 import 'package:flutter/foundation.dart';
 import '../models/book.dart';
+import '../models/cart_item.dart';
 
 class CartProvider with ChangeNotifier {
-  final List<Book> _items = [];
+  // Map untuk menyimpan daftar buku di keranjang (Key: ID Buku, Value: CartItem)
+  final Map<String, CartItem> _items = {};
 
-  // Getter untuk mengambil daftar buku di keranjang
-  List<Book> get items => _items;
+  // Getter untuk mengambil daftar item di keranjang
+  Map<String, CartItem> get items => {..._items};
 
-  // Total jumlah buku di keranjang
-  int get itemCount => _items.length;
+  // 1. totalItems: Menghitung jumlah seluruh buku (termasuk kuantitasnya)
+  int get totalItems {
+    var total = 0;
+    _items.forEach((key, cartItem) {
+      total += cartItem.quantity;
+    });
+    return total;
+  }
 
-  // Hitung total harga
+  // 2. totalPrice: Menghitung total harga seluruh buku di keranjang
   double get totalPrice {
-    return _items.fold(0.0, (sum, item) => sum + item.price);
+    var total = 0.0;
+    _items.forEach((key, cartItem) {
+      total += cartItem.book.price * cartItem.quantity;
+    });
+    return total;
   }
 
-  // Cek apakah buku sudah ada di keranjang
-  bool isInCart(Book book) {
-    return _items.any((item) => item.id == book.id);
-  }
-
-  // Tambah buku ke keranjang
-  void addBook(Book book) {
-    if (!isInCart(book)) {
-      _items.add(book);
-      notifyListeners(); // Memberitahu UI untuk update tampilan
+  // 3. addItem(): Menambahkan buku atau menambah jumlah jika buku sudah ada
+  void addItem(Book book) {
+    if (_items.containsKey(book.id)) {
+      // Jika buku sudah ada, tambah jumlahnya (quantity)
+      _items.update(
+        book.id,
+        (existingItem) => CartItem(
+          book: existingItem.book,
+          quantity: existingItem.quantity + 1,
+        ),
+      );
+    } else {
+      // Jika buku belum ada, masukkan ke keranjang dengan quantity = 1
+      _items.putIfAbsent(
+        book.id,
+        () => CartItem(book: book, quantity: 1),
+      );
     }
+    notifyListeners(); // Memanggil notifyListeners() setiap ada perubahan
   }
 
-  // Hapus buku dari keranjang
-  void removeBook(Book book) {
-    _items.removeWhere((item) => item.id == book.id);
-    notifyListeners(); // Memberitahu UI untuk update tampilan
+  // 4. removeItem(): Mengurangi jumlah atau menghapus buku dari keranjang
+  void removeItem(String bookId) {
+    if (!_items.containsKey(bookId)) {
+      return;
+    }
+
+    if (_items[bookId]!.quantity > 1) {
+      // Jika jumlahnya lebih dari 1, kurangi kuantitasnya
+      _items.update(
+        bookId,
+        (existingItem) => CartItem(
+          book: existingItem.book,
+          quantity: existingItem.quantity - 1,
+        ),
+      );
+    } else {
+      // Jika jumlahnya sisa 1, hapus buku dari keranjang
+      _items.remove(bookId);
+    }
+    notifyListeners(); // Memanggil notifyListeners() setiap ada perubahan
   }
 
-  // Bersihkan keranjang
+  // Fungsi tambahan untuk menghapus satu baris item secara penuh (opsional)
+  void removeSingleBookCompletely(String bookId) {
+    _items.remove(bookId);
+    notifyListeners();
+  }
+
+  // 5. clearCart(): Mengosongkan keranjang
   void clearCart() {
     _items.clear();
-    notifyListeners();
+    notifyListeners(); // Memanggil notifyListeners() setiap ada perubahan
   }
 }

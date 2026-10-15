@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
+import '../providers/theme_provider.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -8,6 +9,7 @@ class CartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cart = Provider.of<CartProvider>(context);
+    final cartItems = cart.items.values.toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -26,18 +28,52 @@ class CartScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: ListView.builder(
-                    itemCount: cart.items.length,
+                    itemCount: cartItems.length,
                     itemBuilder: (context, index) {
-                      final book = cart.items[index];
+                      final item = cartItems[index];
                       return ListTile(
-                        leading: const Icon(Icons.book, color: Colors.blueAccent),
-                        title: Text(book.title),
-                        subtitle: Text('Rp ${book.price.toStringAsFixed(0)}'),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            cart.removeBook(book);
-                          },
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: Image.network(
+                            item.book.imageUrl,
+                            width: 40,
+                            height: 50,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.book,
+                                size: 40,
+                                color: Colors.blueAccent,
+                              );
+                            },
+                          ),
+                        ),
+                        title: Text(item.book.title),
+                        subtitle: Text(
+                          'Rp ${item.book.price.toStringAsFixed(0)} x ${item.quantity}',
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.remove_circle_outline),
+                              onPressed: () {
+                                cart.removeItem(item.book.id);
+                              },
+                            ),
+                            Text(
+                              '${item.quantity}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.add_circle_outline),
+                              onPressed: () {
+                                cart.addItem(item.book);
+                              },
+                            ),
+                          ],
                         ),
                       );
                     },

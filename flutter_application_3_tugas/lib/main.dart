@@ -1,12 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/cart_provider.dart';
+import 'providers/theme_provider.dart';
 import 'screens/book_list_screen.dart';
 
 void main() {
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => CartProvider(),
+    // 1. Menggunakan MultiProvider pada root aplikasi
+    MultiProvider(
+      providers: [
+        // Mendaftarkan CartProvider
+        ChangeNotifierProvider(
+          create: (context) => CartProvider(),
+        ),
+        // Mendaftarkan ThemeProvider
+        ChangeNotifierProvider(
+          create: (context) => ThemeProvider(),
+        ),
+      ],
       child: const NusaBookstoreApp(),
     ),
   );
@@ -17,14 +28,17 @@ class NusaBookstoreApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'NusaBookstore',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
-        useMaterial3: true,
-      ),
-      home: BookListScreen(),
+    // 2. Mendengarkan perubahan tema dari ThemeProvider
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'NusaBookstore',
+          // Menerapkan themeData dinamis (Light Mode / Dark Mode)
+          theme: themeProvider.themeData,
+          home: BookListScreen(),
+        );
+      },
     );
   }
 }
